@@ -1,26 +1,31 @@
 'use strict';
 
 var tk = require('rocambole-token');
-var rocambole = require('rocambole');
 
-exports.transformBefore = transformBefore;
-function transformBefore(ast) {
-  rocambole.moonwalk(ast, transform);
-}
-
-function transform(node) {
-  if (node.type === 'ObjectExpression' || node.type === 'ArrayExpression') {
-    findTrailingCommas(node.endToken.prev);
+exports.tokenBefore = tokenBefore;
+function tokenBefore(token) {
+  if (isClosingCurlyBracket(token) || isClosingBracket(token)) {
+    findTrailingCommas(token.prev);
   }
 }
 
 function findTrailingCommas(token) {
-  if (token.type === 'LineBreak') {
+  if (!token) return;
+
+  if (tk.isBr(token) || tk.isWs(token)) {
     findTrailingCommas(token.prev);
     return;
   }
 
-  if (token.type === 'Punctuator' && token.value === ',') {
+  if (tk.isComma(token)) {
     tk.remove(token);
   }
+}
+
+function isClosingCurlyBracket(token) {
+  return token && token.type === 'Punctuator' && token.value === '}';
+}
+
+function isClosingBracket(token) {
+  return token && token.type === 'Punctuator' && token.value === ']';
 }
